@@ -593,7 +593,7 @@ local function getClosest(t)
     return _[1]
 end
 local function MoveTo(a)
-    followPath(a.Position)
+    Pathfinder.setTarget(a.Position)
     return true
 end
 
@@ -2894,18 +2894,21 @@ local AnimalSim={
 }
 -- List of select player names
 local selectedPlayers = require(script.modules.player_list)
-local localPlayer = game.Players.LocalPlayer
-if localPlayer then
-    for i, playerName in ipairs(selectedPlayers) do
-        if playerName == localPlayer.Name then
-            table.remove(selectedPlayers, i)
-            break
-        end
+local localPlayer = Players.LocalPlayer
+
+-- Remove self from tracking
+for i = #selectedPlayers, 1, -1 do
+    if selectedPlayers[i] == localPlayer.Name then
+        table.remove(selectedPlayers, i)
     end
 end
 
--- Dictionary to store initial health values for selected players
 local initialHealth = {}
+local healthConnections = {}
+
+local function LogEvent(player, event)
+    print(player.Name .. " " .. event)
+end
 
 -- Function to log damage taken by selected players
 local function LogDamage(player, damageAmount)
@@ -2963,68 +2966,80 @@ local function LogDamage(player, damageAmount)
     -- You can add more advanced logging or processing here if needed
 end
 
--- Dictionary to store initial health values for selected players
-local initialHealth = {}
-
--- Function to log events for selected players
-local function LogEvent(player, event)
-    print(player.Name .. " " .. event)
-    -- You can add more advanced logging or processing here if needed
+local function CleanupPlayer(player)
+    if healthConnections[player] then
+        healthConnections[player]:Disconnect()
+        healthConnections[player] = nil
+    end
+    initialHealth[player] = nil
 end
 
--- Function to connect to the player's health changes
+local function TrackHumanoid(player, humanoid)
+    if not humanoid then return end
+    initialHealth[player] = humanoid.Health
+
+    -- Clean up old
+    if healthConnections[player] then
+        healthConnections[player]:Disconnect()
+    end
+
+    healthConnections[player] = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+        local old = initialHealth[player]
+        local now = humanoid.Health
+        if old ~= now then
+            LogDamage(player, old - now)
+            LogEvent(player, "health changed by " .. (old - now))
+            initialHealth[player] = now
+        end
+    end)
+
+    humanoid.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            CleanupPlayer(player)
+            LogEvent(player, "character/connection cleaned up")
+        end
+    end)
+end
+
 local function ConnectHealthChanged(player)
-    local function DisconnectHealthChanged()
-        repeat wait(0) until player.Character:FindFirstChild("Humanoid");
+    -- Connects when a new character is added
+    player.CharacterAdded:Connect(function(char)
+        LogEvent(player, "character changed")
+        local humanoid = char:WaitForChild("Humanoid", 5)
+        if humanoid then
+            TrackHumanoid(player, humanoid)
+        end
+    end)
+    -- For current character (if spawned)
+    if player.Character then
         local humanoid = player.Character:FindFirstChild("Humanoid")
         if humanoid then
-            initialHealth[player] = humanoid.Health
-
-            local healthChangedConnection
-            print("Connected HP",player)
-            healthChangedConnection = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-                local currentHealth = humanoid.Health
-                local initialHealthValue = initialHealth[player]
-                LogDamage(player,initialHealthValue - currentHealth)
-                LogEvent(player, "health changed by " .. (initialHealthValue - currentHealth))
-                initialHealth[player] = currentHealth
-            end)
-
-            player.Character.AncestryChanged:Connect(function(_, newParent)
-                if newParent == nil then
-                    print("Disconnected HP",player)
-                    healthChangedConnection:Disconnect()
-                end
-            end)
+            TrackHumanoid(player, humanoid)
         end
     end
-
-    player.CharacterAdded:Connect(function()
-        LogEvent(player, "character changed")
-        DisconnectHealthChanged()
-        -- Reconnect the event for the new character
+    player.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            CleanupPlayer(player)
+            LogEvent(player, "left (full cleanup)")
+        end
     end)
-    DisconnectHealthChanged()
 end
 
--- Check existing players for selected names
+-- Connect all existing selected players
 for _, playerName in ipairs(selectedPlayers) do
-    local existingPlayer = game.Players:FindFirstChild(playerName)
-    if existingPlayer then
-        LogEvent(existingPlayer, "joined")
-        ConnectHealthChanged(existingPlayer)
+    local player = Players:FindFirstChild(playerName)
+    if player then
+        LogEvent(player, "joined")
+        ConnectHealthChanged(player)
     end
 end
 
--- Connect to the PlayerAdded event for future players
-game.Players.PlayerAdded:Connect(function(player)
-    for _, playerName in ipairs(selectedPlayers) do
-        if player.Name == playerName then
-            LogEvent(player, "joined")
-            ConnectHealthChanged(player)
-        end
+-- Watch for new selected players joining
+Players.PlayerAdded:Connect(function(player)
+    if table.find(selectedPlayers, player.Name) then
+        LogEvent(player, "joined")
+        ConnectHealthChanged(player)
     end
 end)
-end
-)
 
+Players.PlayerRemoving:Connect(CleanupPlayer)
