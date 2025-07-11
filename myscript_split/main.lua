@@ -8,6 +8,13 @@ local base = "https://raw.githubusercontent.com/gaston1799/HostedFiles/72paxd-co
 local team_utils = loadstring(game:HttpGet(base.."team_utils.lua"))()
 local teamCheck = team_utils.teamCheck
 local findClosestPlayer = team_utils.findClosestPlayer
+local aimbot = loadstring(game:HttpGet(base.."aimbot.lua"))()
+
+aimbot.aimSpeed = 0.1         -- tweak for smoothness speed
+aimbot.smoothAim = true       -- true to tween, false to snap instantly
+aimbot.targetType = "player"  -- or "npc"
+aimbot.aimEnabled = false      -- turn on the aimbot
+
 
 local prefixs = loadstring(game:HttpGet(base.."prefixes.lua"))()
 local pathfinding = loadstring(game:HttpGet(base.."pathfinding.lua"))()
