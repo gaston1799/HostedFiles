@@ -1,12 +1,16 @@
 print("Starting up")
 --loadstring(game:HttpGet("https://raw.githubusercontent.com/naquangaston/HostedFiles/main/myscript.lua"))()
+local base = "https://raw.githubusercontent.com/gaston1799/HostedFiles/72paxd-codex/split-script.lua-into-smaller-files/myscript_split/modules/"
 local incDMG_=100
 local justDied=false
-local team_utils = require(script.modules.team_utils)
+local base = "https://raw.githubusercontent.com/gaston1799/HostedFiles/72paxd-codex/split-script.lua-into-smaller-files/myscript_split/modules/"
+
+local team_utils = loadstring(game:HttpGet(base.."team_utils.lua"))()
 local teamCheck = team_utils.teamCheck
 local findClosestPlayer = team_utils.findClosestPlayer
-local prefixs = require(script.modules.prefixes)
-local pathfinding = require(script.modules.pathfinding)
+
+local prefixs = loadstring(game:HttpGet(base.."prefixes.lua"))()
+local pathfinding = loadstring(game:HttpGet(base.."pathfinding.lua"))()
 local PredictPlayerPosition = pathfinding.PredictPlayerPosition
 local teleportInFrontOfPlayer = pathfinding.teleportInFrontOfPlayer
 local increaseByPercentage = pathfinding.increaseByPercentage
