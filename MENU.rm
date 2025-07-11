@@ -1,0 +1,26 @@
+Menu Details - Gaston's Lua Menu
+===============================
+
+This repository hosts `myscript.lua` and associated modules that drive a Roblox menu. The code is split into individual modules inside `myscript_split/modules`. Below is an overview of the key parts of the menu implementation.
+
+Core Script (`myscript.lua` / `myscript_split/main.lua`)
+-------------------------------------------------------
+* Loads helper modules for aimbot, pathfinding, team utilities, and item data.
+* Uses the **Wally GUI Library** to build the menu interface.
+* Creates pages such as **Animal Sim**, **Miners Haven**, **LoS**, and **BloxF**.
+* Adds sections for features like gameplay controls and script hubs.
+* Provides toggles and dropdowns for rebirth farming, layout loading, and more.
+
+Module Summary
+--------------
+* **aimbot.lua** – Implements a configurable aimbot with options for smooth aiming, target type (player or NPC), and speed.
+* **items.lua** – Data table listing catalysts, fusions, and associated items for Miners Haven.
+* **pathfinding.lua** – Utilities for predicting player positions and following paths using Roblox's PathfindingService.
+* **player_list.lua** – Contains a list of player names used by the damage log system.
+* **prefixes.lua** – Defines number prefixes from "k" (thousand) up to extremely large values (centillion and beyond).
+* **team_utils.lua** – Helper functions for team checks and finding the closest non-teammate player.
+* **ui_pages.lua** – Creates the menu pages and sections in the correct order for the UI library.
+
+Author
+------
+Created by **Gaston**. This menu pulls together multiple scripts for Roblox games, organised through the Wally GUI Library.
