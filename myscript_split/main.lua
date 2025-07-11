@@ -595,6 +595,7 @@ local function getClosest(t)
 end
 local function MoveTo(a)
     Pathfinder.setTarget(a.Position)
+    Pathfinder.followTarget=true
     return true
 end
 
@@ -791,8 +792,10 @@ local function farm()
             end
         end
         if (legitCoin) then
-            followPath(point.Position)
+            Pathfinder.setTarget(point.Position)
+            Pathfinder.followTarget=true
         else
+            Pathfinder.followTarget=not true
             tp(point)
         end
     end
