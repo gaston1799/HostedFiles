@@ -24,14 +24,20 @@ end
 -- Build path using Roblox pathfinder
 local function computePathToTarget()
     if not humanoid or not targetPosition then return nil end
-    local path = PathfindingService:CreatePath({
-        AgentRadius = humanoid.HipHeight / 2,
-        AgentHeight = humanoid.HipHeight,
-        AgentCanJump = true,
-        AgentJumpHeight = humanoid.JumpHeight,
-        AgentMaxSlope = humanoid.MaxSlopeAngle,
-        AgentMaxStepHeight = humanoid.HipHeight,
-    })
+    humanoid = character:WaitForChild("Humanoid")
+local jumpHeight = humanoid.JumpHeight
+local radius = humanoid.HipHeight / 2
+local slope = humanoid.MaxSlopeAngle
+
+-- Create a new path using dynamic agent params
+local path = PathfindingService:CreatePath({
+    AgentRadius = radius,
+    AgentHeight = humanoid.HipHeight,
+    AgentCanJump = true,
+    AgentJumpHeight = jumpHeight,
+    AgentMaxSlope = slope,
+    AgentMaxStepHeight = humanoid.HipHeight,
+})
     local success, err = pcall(function()
         path:ComputeAsync(humanoid.RootPart.Position, targetPosition)
     end)
