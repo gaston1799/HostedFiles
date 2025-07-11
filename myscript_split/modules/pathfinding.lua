@@ -11,7 +11,59 @@ local currentPath = {}      -- top scope current path waypoints
 local followTarget = false  -- flag for follow mode
 
 local _pathVersion = 0      -- version to track path updates
+-- Predicts where a player will be in the near future
+local function PredictPlayerPosition(player)
+    local character = player and player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if humanoid and character.PrimaryPart then
+        local velocity = humanoid.WalkSpeed * humanoid.WalkDirection + humanoid.RootPart.Velocity
+        return character.PrimaryPart.Position + velocity
+    end
+    return nil
+end
 
+-- Teleports the local player a short distance in front of the target player
+local function teleportInFrontOfPlayer(targetPlayerName)
+    local player = Players.LocalPlayer
+    local targetPlayer = Players:FindFirstChild(targetPlayerName)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character.PrimaryPart then
+        local targetVelocity = targetPlayer.Character.PrimaryPart.Velocity
+        local predicted = targetPlayer.Character.PrimaryPart.Position + targetVelocity
+        if player.Character then
+            player.Character:SetPrimaryPartCFrame(CFrame.new(predicted))
+        end
+    end
+end
+
+-- Utility to increase a number by a percentage
+local function increaseByPercentage(number, percentage)
+    number = tonumber(number)
+    percentage = tonumber(percentage)
+    assert(number and percentage, "Both arguments must be valid numbers")
+    assert(percentage >= 0, "Percentage should be a positive value")
+    return number + number * (percentage / 100)
+end
+
+-- Build a path from the humanoid to the target position
+local function getPathToPosition(pos, humanoid)
+    local path = PathfindingService:CreatePath({
+        AgentRadius = humanoid.HipHeight / 2,
+        AgentHeight = humanoid.HipHeight,
+        AgentCanJump = true,
+        AgentJumpHeight = humanoid.JumpHeight,
+        AgentMaxSlope = humanoid.MaxSlopeAngle,
+        AgentMaxStepHeight = humanoid.HipHeight,
+    })
+    local ok = pcall(function()
+        path:ComputeAsync(humanoid.RootPart.Position, pos)
+    end)
+    if not ok or path.Status ~= Enum.PathStatus.Success then
+        return nil
+    end
+    return path
+end
+
+-- Ma
 -- Disable keyboard input while following
 local function disableMovementInput(disable)
     if disable then
@@ -109,4 +161,9 @@ end
 return {
     setTarget = setTarget,
     setFollow = setFollow,
+PredictPlayerPosition = PredictPlayerPosition,
+    teleportInFrontOfPlayer = teleportInFrontOfPlayer,
+    increaseByPercentage = increaseByPercentage,
+    getPathToPosition = getPathToPosition,
+    moveToTarget = moveToTarget,
 }
