@@ -1,89 +1,11 @@
 // ==UserScript==
 // @name         Gaston's - Video/Image Downloader
-// @name:ar
-// @name:bg
-// @name:ckb
-// @name:cs
-// @name:da
-// @name:de
-// @name:el
-// @name:en
-// @name:eo
-// @name:es
-// @name:es-419
-// @name:fi
-// @name:fr
-// @name:fr-CA
-// @name:he
-// @name:hr
-// @name:hu
-// @name:id
-// @name:it
-// @name:ja
-// @name:ka
-// @name:ko
-// @name:mr
-// @name:nb
-// @name:nl
-// @name:pl
-// @name:pt-BR
-// @name:ro
-// @name:ru
-// @name:sk
-// @name:sr
-// @name:sv
-// @name:th
-// @name:tr
-// @name:uk
-// @name:ug
-// @name:vi
-// @name:zh-CN
-// @name:zh-TW
 // @namespace    http://tampermonkey.net
 // @version      10.3
 // @supportURL   https://greasyfork.org/en/scripts/496975-gaston-s-video-image-downloader/feedback
 // @homepageURL  https://greasyfork.org/en/users/689441-gaston
 // @description Instagram/Twitch/YouTube/TikTok Video/Audio Downloader (frequently updated) Includes YT Ad block
 // @author       gaston1799
-// @description:ar
-// @description:bg
-// @description:ckb
-// @description:cs
-// @description:da
-// @description:de
-// @description:el
-// @description:en
-// @description:eo
-// @description:es
-// @description:es-419
-// @description:fi
-// @description:fr
-// @description:fr-CA
-// @description:he
-// @description:hr
-// @description:hu
-// @description:id
-// @description:it
-// @description:ja
-// @description:ka
-// @description:ko
-// @description:mr
-// @description:nb
-// @description:nl
-// @description:pl
-// @description:pt-BR
-// @description:ro
-// @description:ru
-// @description:sk
-// @description:sr
-// @description:sv
-// @description:th
-// @description:tr
-// @description:uk
-// @description:ug
-// @description:vi
-// @description:zh-CN
-// @description:zh-TW
 // @match         *://www.youtube.com/*
 // @match         *://yt.savetube.me/*
 // @match         *://production.assets.clips.twitchcdn.net/*
@@ -124,12 +46,27 @@
 // @grant   GM_deleteValue
 // @require https://update.greasyfork.org/scripts/439099/1203718/MonkeyConfig%20Modern%20Reloaded.js
 // @require      https://cdn.jsdelivr.net/gh/naquangaston/HostedFiles@main/UserScripts/Updater.js
-// @require      https://cdn.jsdelivr.net/gh/naquangaston/HostedFiles@main/UserScripts/utils.min.js
 // @grant   GM_addValueChangeListener
 // @grant   GM_removeValueChangeListener
 // @run-at document-start
 // ==/UserScript==
-// Utility helpers are defined in utils.min.js
+/**
+ * Call callback when element matching `selector` is added.
+ *
+ * @param {string} selector
+ * @param {(el: Element) => void} callback
+ */
+function onElementReady(selector, callback) {
+    const obs = new MutationObserver((_, o) => {
+        document.querySelectorAll(selector).forEach(el => {
+            callback(el);
+            o.disconnect();
+        });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+}
+
+
 class videoPlayer{
     #isF=function(){
         return this.isFullScreen
@@ -170,6 +107,85 @@ class videoPlayer{
     }
     get isFullScreen(){return !document.querySelector('[title="Full screen (f)"]')}
 }
+class element {
+    static get br() {
+        return new element("br");
+    }
+    constructor(tag, props = {}) {
+        // If tag is already an HTML element, use it directly.
+        if (tag instanceof HTMLElement) {
+            this.element = tag;
+        } else {
+            this.element = document.createElement(tag);
+            for (let key in props) {
+                if (key === "className") {
+                    // Set the class properly.
+                    this.element.className = props[key];
+                } else {
+                    this.element.setAttribute(key, props[key]);
+                }
+            }
+        }
+    }
+    style(styles) {
+        for (let prop in styles) {
+            this.element.style[prop] = styles[prop];
+        }
+        return this;
+    }
+    append(target, ...targets) {
+        this.element.append(target.element || target);
+        for (let i = 0; i < targets.length; i++) {
+            this.element.append(targets[i].element || targets[i]);
+        }
+        return this;
+    }
+    appendTo(target) {
+        (target.element || (typeof target === 'string' ? document.querySelector(target) : target)).append(this.element);
+        return this;
+    }
+    on(event, callback) {
+        this.element.addEventListener(event, callback);
+        return this;
+    }
+    set(prop, value) {
+        if (prop === "className") {
+            // Remove a leading period if it's there.
+            if (typeof value === "string" && value.startsWith('.')) {
+                value = value.substring(1);
+            }
+            this.element.className = value;
+        } else {
+            this.element[prop] = value;
+        }
+        return this;
+    }
+    remove() {
+        this.element.remove();
+        return this;
+    }
+    get(prop) {
+        return this.element[prop];
+    }
+    get children() {
+        return Array.from(this.element.children);
+    }
+}
+
+_element=_e=element;
+function dispatchAllInputEvents(target, value) {
+    const inputEvents = ['focus', 'input', 'change', 'blur'];
+
+    inputEvents.forEach(eventName => {
+        let ev=new Event(eventName, { bubbles: true, isTrusted: true })
+        if(target[`on${eventName}`])target[`on${eventName}`](ev)
+
+        if (eventName === 'input') {
+            target.value = value;
+        }
+        target.dispatchEvent(ev);
+    });
+};
 (function() {
     return "no more askinf for feed back";
     'use strict';
@@ -218,7 +234,61 @@ class videoPlayer{
         console.log('FirstTime:',isFirstTime)
     })();
 })();
+;(function(){
+    class CustomLogging {
+        constructor(title) {
+            this.title = {
+                body: title || "---",
+                color: "darkgrey",
+                size: "1rem"
+            }
+            this.body = {
+                color: "#008f68",
+                size: "1rem"
+            };
+        }
+
+        setTitleBody(title) {
+            this.title.body = title;
+            return this;
+        }
+
+        setTitleStyle({ color, size }) {
+            if (color !== undefined) this.title.color = color;
+            if (size !== undefined) this.title.size = size;
+            return this;
+        }
+
+        setBodyStyle({ color, size }) {
+            if (color !== undefined) this.body.color = color;
+            if (size !== undefined) this.body.size = size;
+            return this;
+        }
+
+        log(body = "") {
+            console.log(
+                `%c${this.title.body} | %c${body}`,
+                `color: ${this.title.color}; font-weight: bold; font-size: ${this.title.size};`,
+                `color: ${this.body.color}; font-weight: bold; font-size: ${this.body.size}; text-shadow: 0 0 5px rgba(0,0,0,0.2);`
+            );
+        }
+    }
+    Object.assign(this || arguments[0], { CustomLog: CustomLogging })
+})(top);
+
+
+function downloadFileAsTitle(url, filename) {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+}
+console.log('ok')
 var CurrentPlayingSymbol='▶'
+function getV(a,v){return GM_getValue(a)||(GM_setValue(a,v),v)}
+function setV(a,v){GM_setValue(a,v)}
 
 async function getFinalUrlFromServer(url) {
     try {
@@ -242,6 +312,8 @@ async function getFinalUrlFromServer(url) {
     }
 }
 
+_getV=getV
+_setV=setV
 //wip for soundcload
 /*
 async function wfs(s,t){
