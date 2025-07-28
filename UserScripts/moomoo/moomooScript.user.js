@@ -103,5 +103,43 @@
     const player = new LyricsPlayer(songs);
     player.attachAudioElement(audioEl);
 
-    // TODO: Hook into the game and add more features from the original script
+    /**
+     * Wrapper that intercepts the game's WebSocket so we can inspect traffic.
+     * It currently only logs incoming and outgoing messages.
+     */
+    class GameSocket {
+        constructor() {
+            this.socket = null;
+            this._patchConstructor();
+        }
+
+        _patchConstructor() {
+            const OriginalWebSocket = window.WebSocket;
+            const self = this;
+            window.WebSocket = function(url, protocols) {
+                const ws = new OriginalWebSocket(url, protocols);
+                if (/moomoo\.io/.test(url)) {
+                    self.socket = ws;
+                    ws.addEventListener('message', ev => self._onMessage(ev));
+                }
+                return ws;
+            };
+            window.WebSocket.prototype = OriginalWebSocket.prototype;
+        }
+
+        _onMessage(ev) {
+            console.log('[WS IN]', ev.data);
+        }
+
+        send(data) {
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                console.log('[WS OUT]', data);
+                this.socket.send(data);
+            }
+        }
+    }
+
+    const gameSocket = new GameSocket();
+
+    // Placeholder for future features which will use gameSocket
 })();

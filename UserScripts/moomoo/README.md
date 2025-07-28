@@ -32,3 +32,16 @@ The script currently spans over **32k lines** and mixes many different systems i
    - A concise list of hotkeys and options would help users understand how to operate the mod.
 
 These changes should improve performance and clarity, making the bot easier to modify or extend for better gameplay.
+
+## Rewritten Bot Progress
+
+The new `moomooScript.user.js` starts a clean rewrite with modern ES6 modules.
+Current features include:
+
+- Basic math constants for geometric calculations.
+- A `LyricsPlayer` utility that can play songs and post timed lyrics to chat.
+- `GameSocket` wrapper which intercepts the game's WebSocket and logs all
+  incoming and outgoing packets for debugging.
+
+Future updates will gradually port additional functionality from the original
+script while keeping the code modular and maintainable.
